@@ -22,8 +22,4 @@ jobs:
       # Run the hello_world.py python script
       - name: Run Python script
         run: |
-<<<<<<< HEAD
           python3 hello_world.py
-=======
-          python3 hello_world
->>>>>>> Add CI workflow and hello_world.py

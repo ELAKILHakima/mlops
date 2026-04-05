@@ -1,0 +1,45 @@
+name: Air Quality Monitor
+
+on:
+  # Run every hour
+  schedule:
+    - cron: "0 * * * *"
+  # Allow manual trigger from the Actions tab
+  workflow_dispatch:
+    inputs:
+      city:
+        description: "City to check (overrides CITY secret/default)"
+        required: false
+        default: ""
+
+jobs:
+  check-air-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run air quality monitor
+        env:
+          # City to monitor. Set this as a repository variable (Settings →
+          # Variables → Actions) or keep the default "London".
+          CITY: ${{ inputs.city || vars.CITY || 'London' }}
+          # AQI value above which a notification is sent (default 100).
+          AQI_THRESHOLD: ${{ vars.AQI_THRESHOLD || '100' }}
+          # Email notification credentials – store these as encrypted secrets
+          # (Settings → Secrets and variables → Actions → New repository secret).
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: python3 air_quality_monitor.py
