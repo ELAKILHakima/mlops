@@ -49,10 +49,17 @@ _AQI_CATEGORIES = [
 
 
 def pm25_to_aqi(concentration: float) -> int:
-    """Convert a PM2.5 concentration (μg/m³) to a US EPA AQI value."""
+    """Convert a PM2.5 concentration (μg/m³) to a US EPA AQI value.
+
+    Uses the piecewise linear formula from the EPA technical document:
+    AQI = (I_high - I_low) / (C_high - C_low) * (C - C_low) + I_low
+    where C is the truncated concentration and (C_low, C_high, I_low, I_high)
+    are the breakpoint pair that brackets C.
+    """
     concentration = round(concentration, 1)
     for c_low, c_high, i_low, i_high in _PM25_BREAKPOINTS:
         if c_low <= concentration <= c_high:
+            # EPA piecewise linear interpolation
             aqi = (i_high - i_low) / (c_high - c_low) * (concentration - c_low) + i_low
             return round(aqi)
     # Above highest breakpoint – clamp to 500
@@ -78,6 +85,10 @@ def fetch_latest_pm25(city: str) -> tuple[float, str, str]:
     """
     Return (pm25_value, location_name, timestamp) for the most recent PM2.5
     reading in *city* from the OpenAQ v2 API.
+
+    When multiple monitoring stations report data for the city, the station
+    with the most recent ``lastUpdated`` timestamp is selected.  Ties are
+    broken by iteration order (i.e. the first match is kept).
 
     Raises RuntimeError if no data is found.
     """
